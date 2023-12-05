@@ -31,6 +31,7 @@ along with this program. If not, see < http: // www.gnu.org / licenses /> .
 % RunProtocol('Safe') - Same as RunProtocol('Start'), but will end gracefully in protocol is ended with Ctrl-C or SIGINT event
 
 function RunProtocol(Opstring, varargin)
+
     global BpodSystem
 
     if isempty(BpodSystem)
@@ -88,6 +89,7 @@ function RunProtocol(Opstring, varargin)
                 if ~exist(DataPath)
                     error(['Error starting protocol: Test subject "' subjectName '" must be added first, from the launch manager.'])
                 end
+
 
                 %Make standard folders for this protocol.  This will fail silently if the folders exist
                 mkdir(DataPath, protocolName);

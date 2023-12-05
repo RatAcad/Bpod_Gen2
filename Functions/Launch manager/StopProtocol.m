@@ -6,6 +6,7 @@ Copyright (C) 2017 Sanworks LLC, Stony Brook, New York, USA
 
 ----------------------------------------------------------------------------
 
+
 This program is free software:you can redistribute it and / or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, version 3.
@@ -20,6 +21,7 @@ along with this program. If not, see < http: // www.gnu.org / licenses /> .
 
 % Usage:
 % StopProtocol - Stops the running protocol. same as RunProtocol('Stop')
+
 
 function StopProtocol(varargin)
 
@@ -38,6 +40,7 @@ function StopProtocol(varargin)
         disp([BpodSystem.Status.CurrentProtocolName ' ended.'])
     end
 
+
     warning off % Suppress warning, in case protocol folder has already been removed
     rmpath(fullfile(BpodSystem.Path.ProtocolFolder, BpodSystem.Status.CurrentProtocolName));
     warning on
@@ -47,10 +50,12 @@ function StopProtocol(varargin)
     BpodSystem.Path.Settings = '';
     BpodSystem.Status.Live = 0;
 
+
     if BpodSystem.EmulatorMode == 0
         BpodSystem.SerialPort.write('X', 'uint8');
         pause(.1);
         nBytes = BpodSystem.SerialPort.bytesAvailable;
+
 
         if nBytes > 0
             BpodSystem.SerialPort.read(nBytes, 'uint8');
@@ -68,6 +73,7 @@ function StopProtocol(varargin)
         Figs = fields(BpodSystem.ProtocolFigures);
         nFigs = length(Figs);
 
+
         for x = 1:nFigs
 
             try
@@ -82,6 +88,7 @@ function StopProtocol(varargin)
             close(BpodNotebook)
         catch
         end
+
 
     catch
     end
