@@ -87,11 +87,6 @@ switch Op
         HPos = 10;
         MaxVPos = 0;
         BpodSystem.ProtocolFigures.ParameterGUI = figure('Position', [50 50 450 GUIHeight],'name','Parameter GUI','numbertitle','off', 'MenuBar', 'none', 'Resize', 'on');
-        
-        if ~BpodSystem.ShowGUI % check if GUI should be hidden
-            set(BpodSystem.ProtocolFigures.ParameterGUI, 'Visible', 'off');
-        end
-        
         ParamNum = 1;
         for p = 1:nPanels
             ThisPanelParamNames = Panels.(PanelNames{p});
