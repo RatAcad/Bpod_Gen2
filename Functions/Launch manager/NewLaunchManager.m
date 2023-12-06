@@ -702,12 +702,10 @@ BpodSystem.ProtocolSettings = eval(['SettingStruct.' FieldName]);
 BpodSystem.Data = struct;
 ProtocolFolderPath = fullfile(BpodSystem.Path.ProtocolFolder,ProtocolName);
 ProtocolPath = fullfile(BpodSystem.Path.ProtocolFolder,ProtocolName,[ProtocolName '.m']);
-addpath(ProtocolPath);
 
-if isfield(BpodSystem.GUIHandles, 'MainFig')
-    set(BpodSystem.GUIHandles.RunButton, 'cdata', BpodSystem.GUIData.PauseButton, 'TooltipString', 'Press to pause session');
-end
 
+addpath(ProtocolFolderPath);
+set(BpodSystem.GUIHandles.RunButton, 'cdata', BpodSystem.GUIData.PauseButton, 'TooltipString', 'Press to pause session');
 IsOnline = BpodSystem.check4Internet();
 if (IsOnline == 1) && (BpodSystem.SystemSettings.PhoneHome == 1)
     BpodSystem.BpodPhoneHome(1);
@@ -720,6 +718,13 @@ close(BpodSystem.GUIHandles.LaunchManagerFig);
 try
     disp(' ');
     disp(['Starting ' ProtocolName]);
+    set(BpodSystem.GUIHandles.CurrentStateDisplay, 'String', '---');
+    set(BpodSystem.GUIHandles.PreviousStateDisplay, 'String', '---');
+    set(BpodSystem.GUIHandles.LastEventDisplay, 'String', '---');
+    set(BpodSystem.GUIHandles.TimeDisplay, 'String', '0:00:00');
+    if sum(BpodSystem.InputsEnabled(BpodSystem.HW.Inputs == 'P')) == 0
+        warning('All Bpod behavior ports are currently disabled. If your protocol requires behavior ports, enable them from the settings menu.')
+    end
     run(ProtocolPath);
 catch e
     if strcmp(e.message, 'Reference to non-existent field ''States''.') || strcmp(e.message, 'Unrecognized field name "States".')
@@ -735,6 +740,10 @@ catch e
         fprintf("")
     end
 end
+%disp(' ');
+%disp(['Starting ' ProtocolName]);
+
+%run(ProtocolPath);
 
 function OutputString = Spaces2Underscores(InputString)
 SpaceIndexes = InputString == ' ';

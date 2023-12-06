@@ -41,3 +41,7 @@ BpodSystem.SwitchGUI();
 The first time `BpodSystem.SwitchGUI();` is run, the console will be initialized (it will take just a few seconds). Each subsequent call will hide and show the GUI quickly.
 
 TODO: Handle the keyboard interrupt more gracefully. Is this possible in MATLAB?
+
+## Companion Repositories ##
+* [Bpod Firmware](https://sanworks.github.io/Bpod_Wiki/install-and-update/firmware-repo-list/)<br>
+* [Bpod Hardware & CAD](https://github.com/sanworks/Bpod-CAD)

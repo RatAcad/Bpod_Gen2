@@ -80,15 +80,11 @@ JumpOffset = ConditionOffset+BpodSystem.HW.n.Conditions;
 
 nTotalStates = BpodSystem.StateMatrix.nStatesInManifest;
 
-% check if gui has been created
-if isfield(BpodSystem.GUIHandles, 'MainFig')
-    BpodSystem.RefreshGUI; % Reads BpodSystem.HardwareState and BpodSystem.LastEvent to commander GUI.
 
-    % Update time display
-    TimeElapsed = ceil((now*100000) - BpodSystem.ProtocolStartTime);
-    set(BpodSystem.GUIHandles.TimeDisplay, 'String', Secs2HMS(TimeElapsed));
-    set(BpodSystem.GUIHandles.RunButton, 'cdata', BpodSystem.GUIData.PauseButton);
-end
+% Update time display
+TimeElapsed = ceil((now*100000) - BpodSystem.ProtocolStartTime);
+set(BpodSystem.GUIHandles.TimeDisplay, 'String', Secs2HMS(TimeElapsed));
+set(BpodSystem.GUIHandles.RunButton, 'cdata', BpodSystem.GUIData.PauseButton);
 
 BpodSystem.Status.BeingUsed = 1; BpodSystem.Status.InStateMatrix = 1;
 if BpodSystem.EmulatorMode == 1
@@ -225,10 +221,6 @@ while BpodSystem.Status.InStateMatrix
                 end
                 if BpodSystem.Status.InStateMatrix == 1
 
-                    % check if gui has been created
-                    if isfield(BpodSystem.GUIHandles, 'MainFig')
-                        BpodSystem.RefreshGUI;
-                    end
 
                     Events(nEvents+1:(nEvents+nCurrentEvents)) = CurrentEvent(1:nCurrentEvents);
                     if BpodSystem.LiveTimestamps == 1
@@ -237,12 +229,8 @@ while BpodSystem.Status.InStateMatrix
                     BpodSystem.Status.LastEvent = CurrentEvent(1);
                     CurrentEvent(1:nCurrentEvents) = 0;
 
-                    % check if gui has been created
-                    if isfield(BpodSystem.GUIHandles, 'MainFig')
-                        set(BpodSystem.GUIHandles.LastEventDisplay, 'string', EventNames{BpodSystem.Status.LastEvent});
-                    end
 
-                    nEvents = nEvents + uint16(nCurrentEvents);
+                    nEvents = nEvents + uint32(nCurrentEvents);
                 end
             case 2 % Soft-code
                 SoftCode = opCodeBytes(2);

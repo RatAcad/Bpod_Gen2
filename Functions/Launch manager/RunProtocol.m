@@ -102,8 +102,17 @@ function RunProtocol(Opstring, varargin)
                     mkdir(DataFolder);
                 end
 
-                % Ensure that a default settings file exists
-                DefaultSettingsFilePath = fullfile(DataPath, protocolName, 'Session Settings', 'DefaultSettings.mat');
+
+            IsOnline = BpodSystem.check4Internet();
+            if (IsOnline == 1) && (BpodSystem.SystemSettings.PhoneHome == 1)
+                %BpodSystem.BpodPhoneHome(1); % Disabled until server migration. -JS July 2018
+            end
+            if BpodSystem.Status.AnalogViewer
+                set(BpodSystem.GUIHandles.RecordButton, 'Enable', 'off')
+            end
+            BpodSystem.Status.BeingUsed = 1;
+            BpodSystem.Status.SessionStartFlag = 1;
+            BpodSystem.ProtocolStartTime = now*100000;
 
                 if ~exist(DefaultSettingsFilePath)
                     ProtocolSettings = struct;
@@ -116,38 +125,53 @@ function RunProtocol(Opstring, varargin)
                     error(['Error: Settings file: ' settingsName '.mat does not exist for test subject: ' subjectName ' in protocol: ' protocolName '.'])
                 end
 
-                BpodSystem.Status.Live = 1;
-                BpodSystem.GUIData.ProtocolName = protocolName;
-                BpodSystem.GUIData.SubjectName = subjectName;
-                BpodSystem.GUIData.SettingsFileName = SettingsFileName;
-                BpodSystem.Path.Settings = SettingsFileName;
-                BpodSystem.Path.CurrentDataFile = fullfile(DataFolder, FileName);
-                BpodSystem.Status.CurrentProtocolName = protocolName;
-                BpodSystem.Status.CurrentSubjectName = subjectName;
-                SettingStruct = load(BpodSystem.Path.Settings);
-                F = fieldnames(SettingStruct);
-                FieldName = F{1};
-                BpodSystem.ProtocolSettings = eval(['SettingStruct.' FieldName]);
-                BpodSystem.Data = struct;
-                addpath(ProtocolRunFile);
+
+            set(BpodSystem.GUIHandles.CurrentStateDisplay, 'String', '---');
+            set(BpodSystem.GUIHandles.PreviousStateDisplay, 'String', '---');
+            set(BpodSystem.GUIHandles.LastEventDisplay, 'String', '---');
+            set(BpodSystem.GUIHandles.TimeDisplay, 'String', '0:00:00');
+            
+            %figure(BpodSystem.GUIHandles.MainFig);
+            %run(ProtocolRunFile);
+        end
+    case 'StartPause'
+        if BpodSystem.Status.BeingUsed == 0
+            if BpodSystem.EmulatorMode == 0
+                BpodSystem.StopModuleRelay;
+            end
+            NewLaunchManager;
+        else
+            if BpodSystem.Status.Pause == 0
+                disp('Pause requested. The system will pause after the current trial completes.')
+                BpodSystem.Status.Pause = 1;
 
                 if isfield(BpodSystem.GUIHandles, 'MainFig')
                     set(BpodSystem.GUIHandles.RunButton, 'cdata', BpodSystem.GUIData.PauseButton, 'TooltipString', 'Press to pause session');
                 end
 
-                IsOnline = BpodSystem.check4Internet();
 
-                if (IsOnline == 1) && (BpodSystem.SystemSettings.PhoneHome == 1)
-                    %BpodSystem.BpodPhoneHome(1); % Disabled until server migration. -JS July 2018
-                end
+            else
+                disp('Session resumed.')
+                BpodSystem.Status.Pause = 0;
 
-                BpodSystem.Status.BeingUsed = 1;
-                BpodSystem.ProtocolStartTime = now * 100000;
-
-                if BpodSystem.ShowGUI && isfield(BpodSystem.GUIHandles, 'MainFig')
-                    figure(BpodSystem.GUIHandles.MainFig);
-                end
-
+                set(BpodSystem.GUIHandles.RunButton, 'cdata', BpodSystem.GUIData.PauseButton, 'TooltipString', 'Press to pause session');
+            end
+        end
+    case 'Stop'
+        if ~isempty(BpodSystem.Status.CurrentProtocolName)
+            disp(' ')
+            disp([BpodSystem.Status.CurrentProtocolName ' ended'])
+        end
+        warning off % Suppress warning, in case protocol folder has already been removed
+        rmpath(fullfile(BpodSystem.Path.ProtocolFolder, BpodSystem.Status.CurrentProtocolName));
+        warning on
+        BpodSystem.Status.BeingUsed = 0;
+        BpodSystem.Status.CurrentProtocolName = '';
+        BpodSystem.Path.Settings = '';
+        BpodSystem.Status.Live = 0;
+        if BpodSystem.EmulatorMode == 0
+            if BpodSystem.MachineType > 3
+                stop(BpodSystem.Timers.AnalogTimer);
                 try
                     run(ProtocolRunFile);
                 catch e
@@ -168,57 +192,36 @@ function RunProtocol(Opstring, varargin)
 
             end
 
-        case 'StartSafe'
-
-            % if protocol ended with keyboard interrupt or sigint,
-            % uses same ending procedure as RunProtocol('Stop') and **saves data**
-            cleanup = onCleanup(@() StopProtocol(true));
-
-            % Run protocol as normal
-            if nargin == 1
-                RunProtocol('Start');
-            else
-                protocolName = varargin{1};
-                subjectName = varargin{2};
-
-                if nargin > 3
-                    settingsName = varargin{3};
-                else
-                    settingsName = 'DefaultSettings';
+            BpodSystem.SerialPort.write('X', 'uint8');
+            pause(.1);
+            BpodSystem.SerialPort.flush;
+            if BpodSystem.MachineType > 3
+                BpodSystem.AnalogSerialPort.flush;
+            end
+            if isfield(BpodSystem.PluginSerialPorts, 'TeensySoundServer')
+                TeensySoundServer('end');
+            end   
+        end
+        BpodSystem.Status.RecordAnalog = 1;
+        BpodSystem.Status.InStateMatrix = 0;
+        % Shut down protocol and plugin figures (should be made more general)
+        try
+            Figs = fields(BpodSystem.ProtocolFigures);
+            nFigs = length(Figs);
+            for x = 1:nFigs
+                try
+                    close(eval(['BpodSystem.ProtocolFigures.' Figs{x}]));
+                catch
+                    
                 end
 
                 RunProtocol('Start', protocolName, subjectName, settingsName);
             end
 
-        case 'StartPause'
 
-            if BpodSystem.Status.BeingUsed == 0
-
-                if BpodSystem.EmulatorMode == 0
-                    BpodSystem.StopModuleRelay;
-                end
-
-                NewLaunchManager;
-            else
-
-                if BpodSystem.Status.Pause == 0
-                    disp('Pause requested. The system will pause after the current trial completes.')
-                    BpodSystem.Status.Pause = 1;
-
-                    if isfield(BpodSystem.GUIHandles, 'MainFig')
-                        set(BpodSystem.GUIHandles.RunButton, 'cdata', BpodSystem.GUIData.PauseRequestedButton, 'TooltipString', 'Pause scheduled after trial end');
-                    end
-
-                else
-                    disp('Session resumed.')
-                    BpodSystem.Status.Pause = 0;
-
-                    if isfield(BpodSystem.GUIHandles, 'MainFig')
-                        set(BpodSystem.GUIHandles.RunButton, 'cdata', BpodSystem.GUIData.PauseButton, 'TooltipString', 'Press to pause session');
-                    end
-
-                end
-
+            try
+                close(BpodNotebook)
+            catch
             end
 
         case 'Stop'
@@ -229,4 +232,14 @@ function RunProtocol(Opstring, varargin)
                 StopProtocol;
             end
 
-    end
+        catch
+        end
+        set(BpodSystem.GUIHandles.RunButton, 'cdata', BpodSystem.GUIData.GoButton, 'TooltipString', 'Launch behavior session');
+        if BpodSystem.Status.Pause == 1
+            BpodSystem.Status.Pause = 0;
+        end
+    case 'Stop'
+
+        StopProtocol;
+
+end
