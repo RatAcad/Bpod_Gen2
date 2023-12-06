@@ -70,7 +70,6 @@ classdef BpodObject < handle
 
     methods
 
-
         function obj = BpodObject(varargin) %Constructor
             % Add Bpod code to MATLAB path
             BpodPath = fileparts(which('Bpod'));
@@ -101,7 +100,6 @@ classdef BpodObject < handle
             else
                 obj.ShowGUI = 1;
             end
-
 
             if nargin > 1
                 obj.Name = varargin{2};

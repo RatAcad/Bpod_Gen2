@@ -50,7 +50,6 @@ function EndBpod
             catch
             end
 
-
             % close calibration window if it's open
             try
                 delete(BpodSystem.GUIHandles.LiquidCalibrator.MainFig)

@@ -90,7 +90,6 @@ if isfield(BpodSystem.GUIHandles, 'MainFig')
     set(BpodSystem.GUIHandles.RunButton, 'cdata', BpodSystem.GUIData.PauseButton);
 end
 
-
 BpodSystem.Status.BeingUsed = 1; BpodSystem.Status.InStateMatrix = 1;
 if BpodSystem.EmulatorMode == 1
     RunBpodEmulator('init', []);
