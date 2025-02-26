@@ -20,10 +20,10 @@ along with this program. If not, see < http: // www.gnu.org / licenses /> .
 function SaveBpodSessionDataAsync(filename, SessionData, protocolQueue, varargin)
     % SaveBpodSessionDataAsync: Save Bpod data asynchronously (in a background process)
 
-    if nargin > 0
-        checkDay = varargin{1};
+    if nargin > 3
+        splitDay = varargin{1};
     else
-        checkDay = false;
+        splitDay = false;
     end
 
     saverQueue = parallel.pool.PollableDataQueue;
@@ -88,7 +88,7 @@ function SaveBpodSessionDataAsync(filename, SessionData, protocolQueue, varargin
 
         elseif new
 
-            if checkDay
+            if splitDay
 
                 %%% create new data file every 24 hours %%%
                 seconds_per_day = 60 * 60 * 24;
